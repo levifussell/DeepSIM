@@ -1,5 +1,7 @@
 ## DeepSIM Colab ##
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
+
 This code is a fork of the [DeepSIM codebase](https://github.com/eliahuhorwitz/DeepSIM), with minor edits to make it run in a colab notebook. I was interested in applying this model to my own datasets but didn't have the local machine power and so edited to work with colab. The colab notebook can be found [here]() and includes written instructions on how to run it. The example in the colab has the original datasets, as well as an additional dataset for overlaying an animation over my face.
 
 This is based off of research by the original authors from the paper [DeepSIM: Image Shape Manipulation from a Single Augmented Training Sample](https://arxiv.org/abs/2109.06151). Here is the original [codebase]() and [project page]().
