@@ -22,7 +22,11 @@ import torchvision.utils as vutils
 def run(notebook_override_args=None):
 
   opt = TrainOptions().parse(notebook_override_args=notebook_override_args)
-  iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
+  if opt.is_notebook:
+      iter_path = os.path.join('/content/drive/My Drive/DeepSIM', opt.checkpoints_dir, opt.name, 'iter.txt')
+      os.makedirs(os.path.join('/content/drive/My Drive/DeepSIM', opt.checkpoints_dir, opt.name), exist_ok=True)
+  else:
+      iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
   if opt.continue_train:
       try:
           start_epoch, epoch_iter = np.loadtxt(iter_path, delimiter=',', dtype=int)
@@ -67,7 +71,7 @@ def run(notebook_override_args=None):
   print("print_delta", print_delta)
   print("save_delta", save_delta)
 
-  with tqdm(total=opt.niter + opt.niter_decay + 1, colour='blue') as pbar:
+  with tqdm(total=opt.niter + opt.niter_decay + 1, inital=start_epoch, colour='blue') as pbar:
 
     torch.cuda.empty_cache()
     total_time_start = time.time()
