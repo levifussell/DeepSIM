@@ -17,6 +17,10 @@ class Visualizer():
         self.use_html = opt.isTrain and not opt.no_html
         self.win_size = opt.display_winsize
         self.name = opt.name
+        try:
+          self.is_notebook = opt.is_notebook
+        except:
+          self.is_notebook = False
         if self.tf_log:
             import tensorflow as tf
             self.tf = tf
@@ -52,6 +56,14 @@ class Visualizer():
             # Create and write Summary
             summary = self.tf.Summary(value=img_summaries)
             self.writer.add_summary(summary, step)
+
+        if self.is_notebook:
+          from PIL import Image
+          from IPython.display import display
+          for label, image_numpy in visuals.items():
+            print(label)
+            image_pil = Image.fromarray(image_numpy)
+            display(image_pil)
 
         if self.use_html: # save images to a html file
             for label, image_numpy in visuals.items():
