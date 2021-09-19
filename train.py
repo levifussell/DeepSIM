@@ -67,112 +67,112 @@ def run(notebook_override_args=None):
   print("print_delta", print_delta)
   print("save_delta", save_delta)
 
-  pbar = tqdm(opt.niter + opt.niter_decay + 1)
+  with tqdm(total=opt.niter + opt.niter_decay + 1, colour='blue') as pbar:
 
-  torch.cuda.empty_cache()
-  total_time_start = time.time()
-  for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
-      epoch_start_time = time.time()
-      if epoch != start_epoch:
-          epoch_iter = epoch_iter % dataset_size
-      for i, data in enumerate(dataset, start=epoch_iter):
-          if total_steps % opt.print_freq == print_delta:
-              iter_start_time = time.time()
-          total_steps += opt.batchSize
-          epoch_iter += opt.batchSize
+    torch.cuda.empty_cache()
+    total_time_start = time.time()
+    for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
+        epoch_start_time = time.time()
+        if epoch != start_epoch:
+            epoch_iter = epoch_iter % dataset_size
+        for i, data in enumerate(dataset, start=epoch_iter):
+            if total_steps % opt.print_freq == print_delta:
+                iter_start_time = time.time()
+            total_steps += opt.batchSize
+            epoch_iter += opt.batchSize
 
-          # whether to collect output images
-          save_fake = total_steps % opt.display_freq == display_delta
+            # whether to collect output images
+            save_fake = total_steps % opt.display_freq == display_delta
 
-          a = time.time()
-          losses, generated = model(Variable(data['label']), Variable(data['inst']),
-                                    Variable(data['image']), Variable(data['feat']), infer=save_fake)
+            a = time.time()
+            losses, generated = model(Variable(data['label']), Variable(data['inst']),
+                                      Variable(data['image']), Variable(data['feat']), infer=save_fake)
 
-          # sum per device losses
-          losses = [torch.mean(x).unsqueeze(0) if not isinstance(x, int) else x for x in losses]
-          if len(opt.gpu_ids) > 0:
-              loss_dict = dict(zip(model.module.loss_names, losses))
-          else:
-              loss_dict = dict(zip(model.loss_names, losses))
+            # sum per device losses
+            losses = [torch.mean(x).unsqueeze(0) if not isinstance(x, int) else x for x in losses]
+            if len(opt.gpu_ids) > 0:
+                loss_dict = dict(zip(model.module.loss_names, losses))
+            else:
+                loss_dict = dict(zip(model.loss_names, losses))
 
-          # calculate final loss scalar
-          loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
-          loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat', 0) + loss_dict.get('G_VGG', 0)
+            # calculate final loss scalar
+            loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
+            loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat', 0) + loss_dict.get('G_VGG', 0)
 
-          # update generator weights
-          optimizer_G.zero_grad()
-          if opt.fp16:
-              with amp.scale_loss(loss_G, optimizer_G) as scaled_loss:
-                  scaled_loss.backward()
-          else:
-              loss_G.backward()
-          optimizer_G.step()
+            # update generator weights
+            optimizer_G.zero_grad()
+            if opt.fp16:
+                with amp.scale_loss(loss_G, optimizer_G) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss_G.backward()
+            optimizer_G.step()
 
-          # update discriminator weights
-          optimizer_D.zero_grad()
-          if opt.fp16:
-              with amp.scale_loss(loss_D, optimizer_D) as scaled_loss:
-                  scaled_loss.backward()
-          else:
-              loss_D.backward()
-          optimizer_D.step()
+            # update discriminator weights
+            optimizer_D.zero_grad()
+            if opt.fp16:
+                with amp.scale_loss(loss_D, optimizer_D) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss_D.backward()
+            optimizer_D.step()
 
-          ### print out errors
-          if total_steps % opt.print_freq == print_delta:
-              errors = {k: v.data.item() if not isinstance(v, int) else v for k, v in loss_dict.items()}
-              t = (time.time() - iter_start_time) / opt.print_freq
-              visualizer.print_current_errors(epoch, epoch_iter, errors, t)
-              visualizer.plot_current_errors(errors, total_steps)
-              # call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"])
+            ### print out errors
+            if total_steps % opt.print_freq == print_delta:
+                errors = {k: v.data.item() if not isinstance(v, int) else v for k, v in loss_dict.items()}
+                t = (time.time() - iter_start_time) / opt.print_freq
+                visualizer.print_current_errors(epoch, epoch_iter, errors, t)
+                visualizer.plot_current_errors(errors, total_steps)
+                # call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"])
 
-          ### display output images
-          if save_fake:
-              visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
-                                    ('synthesized_image', util.tensor2im(generated.data[0])),
-                                    ('real_image', util.tensor2im(data['image'][0]))])
-              visualizer.display_current_results(visuals, epoch, total_steps)
+            ### display output images
+            if save_fake:
+                visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
+                                      ('synthesized_image', util.tensor2im(generated.data[0])),
+                                      ('real_image', util.tensor2im(data['image'][0]))])
+                visualizer.display_current_results(visuals, epoch, total_steps)
 
-          ### save latest model
-          if total_steps % opt.save_latest_freq == save_delta:
-              print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
-              if len(opt.gpu_ids) > 0:
-                  model.module.save('latest')
-              else:
-                  model.save('latest')
-              np.savetxt(iter_path, (epoch, epoch_iter), delimiter=',', fmt='%d')
-          if epoch_iter >= dataset_size:
-              break
+            ### save latest model
+            if total_steps % opt.save_latest_freq == save_delta:
+                print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
+                if len(opt.gpu_ids) > 0:
+                    model.module.save('latest')
+                else:
+                    model.save('latest')
+                np.savetxt(iter_path, (epoch, epoch_iter), delimiter=',', fmt='%d')
+            if epoch_iter >= dataset_size:
+                break
 
-      # end of epoch 
-      iter_end_time = time.time()
-      # print('End of epoch %d / %d \t Time Taken: %.4f sec\n' %
-            # (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
-      pbar.update(1)
+        # end of epoch 
+        iter_end_time = time.time()
+        # print('End of epoch %d / %d \t Time Taken: %.4f sec\n' %
+              # (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
+        pbar.update(1)
 
-      ### save model for this epoch
-      if epoch % opt.save_epoch_freq == 0:
-          print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
-          if len(opt.gpu_ids) > 0:
-              model.module.save('latest')
-              model.module.save(epoch)
-          else:
-              model.save('latest')
-              model.save(epoch)
-          np.savetxt(iter_path, (epoch + 1, 0), delimiter=',', fmt='%d')
+        ### save model for this epoch
+        if epoch % opt.save_epoch_freq == 0:
+            print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
+            if len(opt.gpu_ids) > 0:
+                model.module.save('latest')
+                model.module.save(epoch)
+            else:
+                model.save('latest')
+                model.save(epoch)
+            np.savetxt(iter_path, (epoch + 1, 0), delimiter=',', fmt='%d')
 
-      ### instead of only training the local enhancer, train the entire network after certain iterations
-      if (opt.niter_fix_global != 0) and (epoch == opt.niter_fix_global):
-          if len(opt.gpu_ids) > 0:
-              model.module.update_fixed_params()
-          else:
-              model.update_fixed_params()
+        ### instead of only training the local enhancer, train the entire network after certain iterations
+        if (opt.niter_fix_global != 0) and (epoch == opt.niter_fix_global):
+            if len(opt.gpu_ids) > 0:
+                model.module.update_fixed_params()
+            else:
+                model.update_fixed_params()
 
-      ### linearly decay learning rate after certain iterations
-      if epoch > opt.niter:
-          if len(opt.gpu_ids) > 0:
-              model.module.update_learning_rate()
-          else:
-              model.update_learning_rate()
+        ### linearly decay learning rate after certain iterations
+        if epoch > opt.niter:
+            if len(opt.gpu_ids) > 0:
+                model.module.update_learning_rate()
+            else:
+                model.update_learning_rate()
 
   print('End of training [%s], Time Taken: %.4f sec' % (opt.name, time.time() - total_time_start))
   print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))

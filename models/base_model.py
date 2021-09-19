@@ -11,7 +11,12 @@ class BaseModel(torch.nn.Module):
         self.gpu_ids = opt.gpu_ids
         self.isTrain = opt.isTrain
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
-        self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+        
+        if opt.is_notebook and opt.save_to_drive:
+          self.save_dir = os.path.join('/content/drive/My Drive/DeepSIM', opt.checkpoints_dir, opt.name)
+          os.makedirs(self.save_dir, exist_ok=True)
+        else:
+          self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
 
     def set_input(self, input):
         self.input = input
