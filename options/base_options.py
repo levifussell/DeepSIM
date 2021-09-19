@@ -108,10 +108,16 @@ class BaseOptions():
         self.parser.add_argument('--name', type=str)
         self.initialized = True
 
-    def parse(self, save=True):
+    def parse(self, save=True, notebook_override_args=None):
         if not self.initialized:
             self.initialize()
-        self.opt = self.parser.parse_args()
+
+        if notebook_override_args is not None:
+          import arg_mapper
+          self.opt = arg_mapper.map_arg_to_defaults(self.parser, custom_args=notebook_override_args)
+        else:
+          self.opt = self.parser.parse_args("")
+
         self.opt.isTrain = self.isTrain  # train or test
         print("name", self.opt.name)
 
@@ -121,7 +127,7 @@ class BaseOptions():
             id = int(str_id)
             if id >= 0:
                 self.opt.gpu_ids.append(id)
-        print(self.opt.gpu_ids)
+        print("GPU IDs", self.opt.gpu_ids)
 
         # set gpu ids
         if len(self.opt.gpu_ids) > 0:
@@ -129,10 +135,11 @@ class BaseOptions():
 
         args = vars(self.opt)
 
-        print('------------ Options -------------')
-        for k, v in sorted(args.items()):
-            print('%s: %s' % (str(k), str(v)))
-        print('-------------- End ----------------')
+        if notebook_override_args is None:
+          print('------------ Options -------------')
+          for k, v in sorted(args.items()):
+              print('%s: %s' % (str(k), str(v)))
+          print('-------------- End ----------------')
 
         # save to the disk        
         expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
