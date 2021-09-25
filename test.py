@@ -72,18 +72,20 @@ def run(notebook_override_args=None):
       print('process image... %s' % img_path)
       visualizer.save_images(webpage, visuals, img_path)
 
-      # try:
       if opt.is_notebook:
         from PIL import Image
         from IPython.display import display
         import torchvision.transforms as transforms
-        # for label, im in data.items():
-        # tensor2pil = transforms.ToPILImage()
         print('label')
         display(Image.fromarray(util.tensor2im(data['label'][0])))
         print('generated')
-        display(Image.fromarray(util.tensor2im(generated.data[0])))
-      # except: pass
+        im_generated = Image.fromarray(util.tensor2im(generated.data[0])) 
+        display(im_generated)
+
+        # save the generated files.
+        save_path = data['path'][0].replace("test_seg", "test_B")
+        os.makedirs("/".join(save_path.split('/')[:-1]), exist_ok=True)
+        im_generated.save(save_path)
 
   webpage.save()
 

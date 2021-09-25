@@ -48,6 +48,7 @@ class BaseOptions():
                                  help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
 
         # augmentations
+        self.parser.add_argument('--recolor', type=int, default=0)
         self.parser.add_argument('--resize_or_crop', type=str, default='none',
                                  help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true',

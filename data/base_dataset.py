@@ -5,6 +5,7 @@ import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image
+from PIL import ImageEnhance
 from skimage import util, feature
 from skimage.color import rgb2gray
 from skimage import morphology
@@ -29,6 +30,12 @@ def get_params(opt, size, input_im):
     y = random.randint(0, np.maximum(0, new_h - opt.fineSize))
 
     params = {'crop_pos': (x, y), 'crop': random.random() > 0.5, "flip": random.random() > 0.5}
+
+    # change color
+    if opt.recolor:
+      params['color'] = random.random() > 0.5
+      params['brightness'] = random.random() > 0.5
+      params['contrast'] = random.random() > 0.5
 
     for affine_trans in opt.affine_transforms.keys():
         apply_affine_trans = (random.random() > 0.5) and affine_trans in opt.affine_aug
@@ -94,6 +101,18 @@ def get_transform(opt, params, normalize=True, is_primitive=False, is_edges=Fals
             transform_list.append(transforms.Lambda(
                 lambda img: __crop(img, params['crop_pos'], opt.fineSize, params['crop'])))
 
+        if opt.recolor:
+          transform_list.append(transforms.Lambda(
+            lambda img: __color(img, params['color'])
+          ))
+          transform_list.append(transforms.Lambda(
+            lambda img: __contrast(img, params['contrast'])
+          ))
+          transform_list.append(transforms.Lambda(
+            lambda img: __brightness(img, params['brightness'])
+          ))
+
+
     if is_edges:
         transform_list.append(transforms.Lambda(lambda img: __binary_thresh(img,opt.canny_color)))
 
@@ -110,6 +129,25 @@ def normalize():
 
 
 # ====== primitive and real image augmentations ======
+
+def __color(img, do_color):
+  if do_color:
+    colorer = ImageEnhance.Color(img)  
+    return colorer.enhance(np.random.uniform(0.5, 3.0))
+  return img
+
+def __brightness(img, do_brightness):
+  if do_brightness:
+    brightener = ImageEnhance.Brightness(img)  
+    return brightener.enhance(np.random.uniform(0.5, 3.0))
+  return img
+
+def __contrast(img, do_contrast):
+  if do_contrast:
+    contraster = ImageEnhance.Contrast(img)  
+    return contraster.enhance(np.random.uniform(0.5, 3.0))
+  return img
+
 def __crop(img, pos, size, crop):
     if crop:
         ow, oh = img.size
