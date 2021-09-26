@@ -116,6 +116,10 @@ class AlignedDataset(BaseDataset):
         ### input B (real images)
         if self.opt.isTrain or self.opt.use_encoded_image:
             B = self.B
+            if self.opt.recolor:
+                params['color'] = 0
+                params['contrast'] = 0
+                params['brightness'] = 0
             transform_B = get_transform(self.opt, params, is_primitive=False)
             B_tensor = transform_B(B)
 

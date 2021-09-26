@@ -71,7 +71,7 @@ def run(notebook_override_args=None):
   print("print_delta", print_delta)
   print("save_delta", save_delta)
 
-  with tqdm(total=opt.niter + opt.niter_decay + 1, inital=start_epoch, colour='blue') as pbar:
+  with tqdm(total=opt.niter + opt.niter_decay + 1, initial=start_epoch, colour='blue') as pbar:
 
     torch.cuda.empty_cache()
     total_time_start = time.time()
