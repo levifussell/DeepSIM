@@ -1,3 +1,5 @@
+![alttext](imgs/face_tiling.png)
+
 ## DeepSIM Colab ##
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/levifussell/DeepSIM/blob/master/notebooks/DeepSIM_colab_notebook.ipynb)
