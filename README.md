@@ -8,6 +8,8 @@ This code is a fork of the [DeepSIM code base](https://github.com/eliahuhorwitz/
 
 This is based off of research by the original authors from the paper [DeepSIM: Image Shape Manipulation from a Single Augmented Training Sample](https://arxiv.org/abs/2109.06151). Here are links to the original [code base](https://github.com/eliahuhorwitz/DeepSIM) and [project page](http://www.vision.huji.ac.il/deepsim/).
 
+![alttext](imgs/face_stack_512.png)
+
 ## Getting Started
 
 All the information for running this code base on your own dataset can be found on the [colab notebook](https://colab.research.google.com/github/levifussell/DeepSIM/blob/master/notebooks/DeepSIM_colab_notebook.ipynb). If you want to run this code locally without colab, then see [the original](https://github.com/eliahuhorwitz/DeepSIM) code base for well documented instructions.
