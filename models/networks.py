@@ -18,6 +18,8 @@ def weights_init(m):
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
+    elif norm_type == 'batch-no-running':
+        norm_layer = functools.partial(nn.BatchNorm2d, affine=True, track_running_stats=False)
     elif norm_type == 'instance':
         norm_layer = functools.partial(nn.InstanceNorm2d, affine=False)
     else:
