@@ -32,6 +32,7 @@ def run(notebook_override_args=None):
   # test
   if not opt.engine and not opt.onnx:
       model = create_model(opt)
+      model.train()
       if opt.data_type == 16:
           model.half()
       elif opt.data_type == 8:
