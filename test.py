@@ -9,7 +9,9 @@ from util.visualizer import Visualizer
 from util import html
 import torch
 
-def run(notebook_override_args=None):
+from tqdm import tqdm
+
+def run(notebook_override_args=None, display_rate=10):
 
   opt = TestOptions().parse(save=False, notebook_override_args=notebook_override_args)
   opt.nThreads = 1   # test code only supports nThreads = 1
@@ -43,55 +45,61 @@ def run(notebook_override_args=None):
   else:
       from run_engine import run_trt_engine, run_onnx
 
-  for i, data in enumerate(dataset):
-      if i >= opt.how_many:
-          break
-      if opt.data_type == 16:
-          data['label'] = data['label'].half()
-          data['inst']  = data['inst'].half()
-      elif opt.data_type == 8:
-          data['label'] = data['label'].uint8()
-          data['inst']  = data['inst'].uint8()
-      if opt.export_onnx:
-          print ("Exporting to ONNX: ", opt.export_onnx)
-          assert opt.export_onnx.endswith("onnx"), "Export model file should end with .onnx"
-          torch.onnx.export(model, [data['label'], data['inst']],
-                            opt.export_onnx, verbose=True)
-          exit(0)
-      minibatch = 1
-      if opt.engine:
-          generated = run_trt_engine(opt.engine, minibatch, [data['label'], data['inst']])
-      elif opt.onnx:
-          generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
-      else:
-          generated = model.inference(data['label'], data['inst'], data['image'])
-      print(data['label'].shape, data['inst'].shape, data['image'].shape, generated.shape)
-      visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
-                            ('synthesized_image', util.tensor2im(generated.data[0]))])
-      img_path = data['path']
-      print(img_path)
-      print('process image... %s' % img_path)
-      visualizer.save_images(webpage, visuals, img_path)
+  with tqdm(total=len(dataset), initial=0, colour='blue') as pbar:
+    for i, data in enumerate(dataset):
+        # if i >= opt.how_many:
+        #     break
+        if opt.data_type == 16:
+            data['label'] = data['label'].half()
+            data['inst']  = data['inst'].half()
+        elif opt.data_type == 8:
+            data['label'] = data['label'].uint8()
+            data['inst']  = data['inst'].uint8()
+        if opt.export_onnx:
+            print ("Exporting to ONNX: ", opt.export_onnx)
+            assert opt.export_onnx.endswith("onnx"), "Export model file should end with .onnx"
+            torch.onnx.export(model, [data['label'], data['inst']],
+                              opt.export_onnx, verbose=True)
+            exit(0)
+        minibatch = 1
+        if opt.engine:
+            generated = run_trt_engine(opt.engine, minibatch, [data['label'], data['inst']])
+        elif opt.onnx:
+            generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
+        else:
+            generated = model.inference(data['label'], data['inst'], data['image'])
+        if i % display_rate == 0: 
+          print(data['label'].shape, data['inst'].shape, data['image'].shape, generated.shape)
+        visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
+                              ('synthesized_image', util.tensor2im(generated.data[0]))])
+        img_path = data['path']
+        if i % display_rate == 0: 
+          print(img_path)
+          print('process image... %s' % img_path)
+        # visualizer.save_images(webpage, visuals, img_path)
 
-      if opt.is_notebook:
-        from PIL import Image
-        from IPython.display import display
-        import torchvision.transforms as transforms
-        print('label')
-        display(Image.fromarray(util.tensor2im(data['label'][0])))
-        print('generated')
-        im_generated = Image.fromarray(util.tensor2im(generated.data[0])) 
-        display(im_generated)
+        if opt.is_notebook:
+          from PIL import Image
+          from IPython.display import display
+          import torchvision.transforms as transforms
+          im_generated = Image.fromarray(util.tensor2im(generated.data[0])) 
+          if i % display_rate == 0: 
+            print('label')  
+            display(Image.fromarray(util.tensor2im(data['label'][0])))
+            print('generated')
+            display(im_generated)
 
-        # save the generated files.
-        save_path = data['path'][0].replace("test_seg", "test_B")
-        os.makedirs("/".join(save_path.split('/')[:-1]), exist_ok=True)
-        im_generated.save(save_path)
+          # save the generated files.
+          save_path = data['path'][0].replace("test_seg", "test_B")
+          os.makedirs("/".join(save_path.split('/')[:-1]), exist_ok=True)
+          im_generated.save(save_path)
 
-  webpage.save()
+        pbar.update(1)
 
-  if opt.vid_mode:
-      util.frames_to_vid(webpage)
+  # webpage.save()
+
+  # if opt.vid_mode:
+  #     util.frames_to_vid(webpage)
 
 if __name__ == "__main__":
   run()
