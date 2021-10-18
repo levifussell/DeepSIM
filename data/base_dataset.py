@@ -29,7 +29,7 @@ def get_params(opt, size, input_im):
     x = random.randint(0, np.maximum(0, new_w - opt.fineSize))
     y = random.randint(0, np.maximum(0, new_h - opt.fineSize))
 
-    params = {'crop_pos': (x, y), 'crop': random.random() > 0.5, "flip": random.random() > 0.5}
+    params = {'crop_pos': (x, y), 'crop': random.random() > 0.0, "flip": random.random() > 0.5}
 
     # change color
     if opt.recolor:
