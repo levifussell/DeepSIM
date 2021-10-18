@@ -3,8 +3,8 @@ import numpy as np
 from .warp_image import warp_images
 
 
-def _get_regular_grid(image, points_per_dim):
-    nrows, ncols = image.shape[0], image.shape[1]
+def _get_regular_grid(image_shape, points_per_dim):
+    nrows, ncols = image_shape[0], image_shape[1]
     rows = np.linspace(0, nrows, points_per_dim)
     cols = np.linspace(0, ncols, points_per_dim)
     rows, cols = np.meshgrid(rows, cols)

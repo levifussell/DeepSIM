@@ -50,7 +50,8 @@ def get_params(opt, size, input_im):
 
     np_im = np.array(input_im)
     if opt.tps_aug:
-        src = tps_warp._get_regular_grid(np_im, points_per_dim=opt.tps_points_per_dim)
+        im_shape = np_im.shape if not opt.crop_before_tps else (opt.fineSize, opt.fineSize)
+        src = tps_warp._get_regular_grid(im_shape, points_per_dim=opt.tps_points_per_dim)
         dst = tps_warp._generate_random_vectors(np_im, src, scale=0.1 * new_w)
         params['tps'] = {'src': src, 'dst': dst, 'apply_tps': apply_tps}
 
@@ -88,6 +89,11 @@ def get_transform(opt, params, normalize=True, is_primitive=False, is_edges=Fals
             transform_list.append(
                 transforms.Lambda(lambda img: __affine(img, params)))
 
+        if opt.crop_before_tps:
+            if 'crop' in opt.resize_or_crop:
+                transform_list.append(transforms.Lambda(
+                    lambda img: __crop(img, params['crop_pos'], opt.fineSize, params['crop'])))
+
         if opt.tps_aug:
             transform_list.append(
                 transforms.Lambda(lambda img: __apply_tps(img, params['tps'])))
@@ -97,9 +103,10 @@ def get_transform(opt, params, normalize=True, is_primitive=False, is_edges=Fals
                 transform_list.append(
                     transforms.Lambda(lambda img: __apply_cutmix(img, params['cutmix'])))
 
-        if 'crop' in opt.resize_or_crop:
-            transform_list.append(transforms.Lambda(
-                lambda img: __crop(img, params['crop_pos'], opt.fineSize, params['crop'])))
+        if not opt.crop_before_tps:
+            if 'crop' in opt.resize_or_crop:
+                transform_list.append(transforms.Lambda(
+                    lambda img: __crop(img, params['crop_pos'], opt.fineSize, params['crop'])))
 
         if opt.recolor:
           transform_list.append(transforms.Lambda(
